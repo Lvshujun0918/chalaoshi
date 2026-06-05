@@ -26,3 +26,4 @@ dist-ssr
 #private
 *.csv
 gpa.json
+!backend/data/chalaoshi.db

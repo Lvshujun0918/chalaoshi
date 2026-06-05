@@ -45,13 +45,13 @@ COPY --from=builder-go /app/chalaoshi-server .
 # 复制前端静态文件
 COPY --from=builder-go /app/dist ./dist
 
-# 复制数据文件（镜像内预置，运行时也可挂载覆盖）
-COPY data/ ./data/
-
-# 数据目录（SQLite 数据库存这里）
+# 数据库目录
 RUN mkdir -p /app/db
+
+# 复制预构建的 SQLite 数据库（无需 CSV 导入，直接使用）
+COPY backend/data/chalaoshi.db /app/db/chalaoshi.db
 
 EXPOSE 8080
 
-# 启动服务器，静态文件目录设为 ./dist
-CMD ["./chalaoshi-server", "-data", "./data", "-db", "/app/db/chalaoshi.db", "-static", "./dist", "-port", "8080"]
+# 启动服务器（数据库已预构建，不需要 -data 导入）
+CMD ["./chalaoshi-server", "-db", "/app/db/chalaoshi.db", "-static", "./dist", "-port", "8080"]
