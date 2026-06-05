@@ -13,10 +13,9 @@ RUN npm run build
 
 # ============================================
 # 阶段 2：构建后端 (Go)
+# 使用 Debian 镜像，glibc 兼容 mattn/go-sqlite3 的 CGO 编译
 # ============================================
-FROM golang:1.21-alpine AS builder-go
-
-RUN apk add --no-cache gcc musl-dev
+FROM golang:1.21-bullseye AS builder-go
 
 WORKDIR /app
 
@@ -27,7 +26,8 @@ COPY backend/ ./
 # 将前端构建产物复制到 Go 能找到的位置
 COPY --from=builder-node /app/dist ./dist
 
-RUN CGO_ENABLED=1 go build -o chalaoshi-server .
+# 静态链接，使二进制可在 Alpine 运行
+RUN CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static"' -o chalaoshi-server .
 
 # ============================================
 # 阶段 3：运行阶段
