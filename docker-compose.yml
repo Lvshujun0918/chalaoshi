@@ -1,0 +1,7 @@
+services:
+  chalaoshi:
+    image: ghcr.io/lvshujun0918/chalaoshi:latest
+    container_name: chalaoshi
+    restart: unless-stopped
+    ports:
+      - "2382:80"
