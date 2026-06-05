@@ -8,8 +8,10 @@
   --color-surface: #ffffff;
   --color-text: #1a1a2e;
   --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
   --color-text-muted: #9ca3af;
   --color-border: #e8eaf0;
+  --color-border-light: #f0f1f5;
   --color-border-hover: #d1d5e0;
 
   /* Rating */

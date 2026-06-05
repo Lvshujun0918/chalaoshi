@@ -1,18 +1,61 @@
 <script setup>
+import { ref, onMounted, watch } from 'vue'
 import { useTeacherSearch } from './composables/useTeacherSearch.js'
 import SearchBar from './components/SearchBar.vue'
 import TeacherCard from './components/TeacherCard.vue'
+import CommentModal from './components/CommentModal.vue'
 import AppIcon from './components/AppIcon.vue'
 
 const {
   query,
-  results,
+  loading,
   displayResults,
   totalTeachers,
   totalColleges,
+  totalResults,
+  page,
+  totalPages,
+  departments,
+  currentDepartment,
   getCollegeName,
   clearQuery,
+  search,
+  filterByDepartment,
+  setPage,
 } = useTeacherSearch()
+
+const selectedTeacher = ref(null)
+
+function openComments(teacher) {
+  selectedTeacher.value = teacher
+}
+
+function closeComments() {
+  selectedTeacher.value = null
+}
+
+function handleClear() {
+  clearQuery()
+  search(1)
+}
+
+// 防抖搜索：用户输入时自动触发
+let debounceTimer = null
+watch(query, () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    search(1)
+  }, 350)
+})
+
+function handleDeptFilter(dept) {
+  filterByDepartment(dept)
+}
+
+// 初始加载热门教师
+onMounted(() => {
+  search(1)
+})
 </script>
 
 <template>
@@ -42,14 +85,35 @@ const {
     </header>
 
     <!-- Search -->
-    <SearchBar v-model="query" @clear="clearQuery" />
+    <SearchBar
+      v-model="query"
+      @clear="handleClear()"
+    />
+
+    <!-- Department Filter -->
+    <div v-if="departments.length > 0" class="dept-filter">
+      <button
+        :class="['dept-chip', { active: !currentDepartment }]"
+        @click="handleDeptFilter('')"
+      >全部</button>
+      <button
+        v-for="d in departments.slice(0, 20)"
+        :key="d.name"
+        :class="['dept-chip', { active: currentDepartment === d.name }]"
+        @click="handleDeptFilter(d.name)"
+        :title="d.name + ' (' + d.count + ')'"
+      >{{ d.name }}<span class="dept-count">{{ d.count }}</span></button>
+    </div>
 
     <!-- Main Content -->
     <main class="app-main">
+      <!-- Loading -->
+      <div v-if="loading" class="loading-state">搜索中...</div>
+
       <!-- Result Summary -->
-      <div v-if="query && results.length > 0" class="result-summary">
-        <span>找到 <strong>{{ results.length }}</strong> 条结果</span>
-        <span v-if="results.length > 20" class="result-note">仅显示前 20 条</span>
+      <div v-else-if="totalResults > 0" class="result-summary">
+        <span>找到 <strong>{{ totalResults }}</strong> 条结果</span>
+        <span v-if="page > 1">第 {{ page }}/{{ totalPages }} 页</span>
       </div>
 
       <!-- Teacher List -->
@@ -63,32 +127,54 @@ const {
           v-for="t in displayResults"
           :key="t.id"
           :teacher="t"
-          :college-name="getCollegeName(t.xy)"
+          :college-name="getCollegeName(t.department)"
+          @click="openComments"
         />
       </TransitionGroup>
 
       <!-- No Results -->
-      <div v-else-if="query" class="empty-state">
+      <div v-else-if="!loading && !query && !currentDepartment" class="empty-state welcome">
+        <AppIcon name="pointer" :size="48" class="empty-icon" />
+        <p>输入教师姓名、拼音或缩写开始查询</p>
+        <p class="empty-hint">支持教师姓名、拼音全拼和拼音首字母搜索</p>
+      </div>
+
+      <div v-else-if="!loading" class="empty-state">
         <AppIcon name="search-lg" :size="48" class="empty-icon" />
         <p>没有找到匹配的教师</p>
         <p class="empty-hint">试试其他关键词吧</p>
       </div>
 
-      <!-- Welcome -->
-      <div v-else class="empty-state welcome">
-        <AppIcon name="pointer" :size="48" class="empty-icon" />
-        <p>输入教师姓名、拼音或缩写开始查询</p>
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button :disabled="page <= 1" @click="setPage(page - 1)">‹ 上一页</button>
+        <template v-for="p in Math.min(totalPages, 10)" :key="p">
+          <button
+            v-if="p === 1 || p === totalPages || Math.abs(p - page) <= 2"
+            :class="{ current: p === page }"
+            @click="setPage(p)"
+          >{{ p }}</button>
+          <span v-else-if="p === 2 || p === totalPages - 1" class="ellipsis">…</span>
+        </template>
+        <button :disabled="page >= totalPages" @click="setPage(page + 1)">下一页 ›</button>
       </div>
     </main>
 
     <!-- Footer -->
     <footer class="app-footer">
       <p>
-        Made with
+        Made by lsj with
         <AppIcon name="heart" :size="12" class="footer-heart" />
-        · 数据仅供参考
+        · 数据来自査老师离线版，仅供参考
       </p>
     </footer>
+
+    <!-- Comment Modal -->
+    <CommentModal
+      v-if="selectedTeacher"
+      :teacher="selectedTeacher"
+      @close="closeComments"
+    />
   </div>
 </template>
 
@@ -202,8 +288,95 @@ const {
   color: var(--color-text);
 }
 
-.result-note {
+/* ── Department Filter ── */
+.dept-filter {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dept-chip {
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  cursor: pointer;
   font-size: 12px;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dept-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.dept-chip.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.dept-count {
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* ── Loading ── */
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+  padding-top: 20px;
+}
+
+.pagination button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  transition: all 0.15s;
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pagination button.current {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination .ellipsis {
+  padding: 0 2px;
   color: var(--color-text-muted);
 }
 

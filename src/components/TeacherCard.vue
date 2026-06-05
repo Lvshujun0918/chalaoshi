@@ -7,6 +7,8 @@ const props = defineProps({
   collegeName: { type: String, default: '' },
 })
 
+const emit = defineEmits(['click'])
+
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #667eea, #764ba2)',
   'linear-gradient(135deg, #f093fb, #f5576c)',
@@ -24,25 +26,39 @@ const avatarStyle = computed(() => ({
   background: AVATAR_GRADIENTS[props.teacher.id % AVATAR_GRADIENTS.length],
 }))
 
+const rateDisplay = computed(() => {
+  const r = props.teacher.rating
+  if (r == null || r === 0) return 'N/A'
+  return r.toFixed(1)
+})
+
 const rateClass = computed(() => {
-  if (props.teacher.rate === 'N/A') return 'rate-na'
-  const n = parseFloat(props.teacher.rate)
+  if (rateDisplay.value === 'N/A') return 'rate-na'
+  const n = parseFloat(rateDisplay.value)
   if (n >= 8) return 'rate-high'
   if (n >= 6) return 'rate-mid'
   return 'rate-low'
 })
 
 const hotClass = computed(() => {
-  if (props.teacher.hot >= 80) return 'hot-high'
-  if (props.teacher.hot >= 50) return 'hot-mid'
+  const h = props.teacher.hotness
+  if (h >= 80) return 'hot-high'
+  if (h >= 50) return 'hot-mid'
   return 'hot-low'
 })
 
-const initials = computed(() => props.teacher.name.charAt(0))
+const hotDisplay = computed(() => {
+  const h = props.teacher.hotness
+  if (h >= 10000) return (h / 10000).toFixed(1) + 'w'
+  if (h >= 1000) return (h / 1000).toFixed(1) + 'k'
+  return String(h)
+})
+
+const initials = computed(() => props.teacher.name ? props.teacher.name.charAt(0) : '?')
 </script>
 
 <template>
-  <article class="teacher-card">
+  <article class="teacher-card" @click="emit('click', teacher)">
     <div class="avatar" :style="avatarStyle" aria-hidden="true">
       {{ initials }}
     </div>
@@ -53,20 +69,25 @@ const initials = computed(() => props.teacher.name.charAt(0))
         <span class="college-tag" :title="collegeName">{{ collegeName }}</span>
       </div>
       <div class="meta">
-        <code>{{ teacher.py }}</code>
-        <code>{{ teacher.sx }}</code>
+        <code>{{ teacher.pinyin }}</code>
+        <code>{{ teacher.pinyin_abbr }}</code>
       </div>
     </div>
 
     <div class="badges">
-      <span :class="['badge', 'badge-rate', rateClass]" :aria-label="`评分 ${teacher.rate}`">
+      <span :class="['badge', 'badge-rate', rateClass]" :aria-label="`评分 ${rateDisplay}`">
         <AppIcon name="star" :size="14" class="badge-icon" />
-        {{ teacher.rate === 'N/A' ? '暂无' : teacher.rate }}
+        {{ rateDisplay === 'N/A' ? '暂无' : rateDisplay }}
       </span>
 
-      <span :class="['badge', 'badge-hot', hotClass]" :aria-label="`热度 ${teacher.hot}`">
+      <span :class="['badge', 'badge-hot', hotClass]" :aria-label="`热度 ${hotDisplay}`">
         <AppIcon name="flame" :size="14" class="badge-icon" />
-        {{ teacher.hot }}
+        {{ hotDisplay }}
+      </span>
+
+      <span class="badge badge-comments">
+        <AppIcon name="comment" :size="14" class="badge-icon" />
+        {{ teacher.rating_count }}
       </span>
     </div>
   </article>
@@ -83,7 +104,7 @@ const initials = computed(() => props.teacher.name.charAt(0))
   box-shadow: var(--shadow-sm);
   border: 1px solid transparent;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
-  cursor: default;
+  cursor: pointer;
 }
 
 .teacher-card:hover {
@@ -198,6 +219,13 @@ const initials = computed(() => props.teacher.name.charAt(0))
 .badge-hot.hot-mid  { color: var(--color-hot-mid); }
 .badge-hot.hot-low  { color: var(--color-hot-low); }
 .badge-hot { background: transparent; padding-left: 0; padding-right: 0; }
+
+/* Comments count */
+.badge-comments {
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
 
 /* Icons */
 .badge-icon { flex-shrink: 0; }

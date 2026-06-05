@@ -133,6 +133,29 @@ defineProps({
     <line x1="15" y1="22" x2="15" y2="18" />
   </svg>
 
+  <!-- Close / X (circular) -->
+  <svg v-else-if="name === 'close'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+
+  <!-- Comment / Chat -->
+  <svg v-else-if="name === 'comment'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+
+  <!-- Thumbs Up / Like -->
+  <svg v-else-if="name === 'like'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
+    <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+  </svg>
+
   <!-- Fallback: empty square -->
   <svg v-else :width="size" :height="size" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
