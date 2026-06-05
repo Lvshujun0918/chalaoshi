@@ -19,6 +19,7 @@ func main() {
 	port := flag.String("port", "8080", "监听端口")
 	dbPath := flag.String("db", "data/chalaoshi.db", "SQLite数据库路径")
 	dataDir := flag.String("data", "../data", "CSV数据目录")
+	staticDir := flag.String("static", "../dist", "前端静态文件目录")
 	flag.Parse()
 
 	// 初始化数据库
@@ -81,10 +82,15 @@ func main() {
 	}
 
 	// 静态文件服务（生产环境下前端打包文件）
-	r.Static("/assets", "../dist/assets")
-	r.StaticFile("/favicon.svg", "../public/favicon.svg")
+	staticFullPath := *staticDir
+	if !filepath.IsAbs(staticFullPath) {
+		execDir, _ := os.Getwd()
+		staticFullPath = filepath.Join(execDir, staticFullPath)
+	}
+	r.Static("/assets", filepath.Join(staticFullPath, "assets"))
+	r.StaticFile("/favicon.svg", filepath.Join(staticFullPath, "favicon.svg"))
 	r.NoRoute(func(c *gin.Context) {
-		c.File("../dist/index.html")
+		c.File(filepath.Join(staticFullPath, "index.html"))
 	})
 
 	log.Printf("[Main] 服务启动于 :%s", *port)

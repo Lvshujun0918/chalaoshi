@@ -4,4 +4,5 @@ services:
     container_name: chalaoshi
     restart: unless-stopped
     ports:
-      - "2382:80"
+      - "2382:80"    volumes:
+      - ./backend/data/chalaoshi.db:/app/db/chalaoshi.db
