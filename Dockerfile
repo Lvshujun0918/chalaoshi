@@ -3,9 +3,9 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# 先复制依赖文件，利用 Docker 缓存层
+# 先复制依赖文件，利用 Docker 缓存层（需要 devDependencies 才能构建）
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts 2>/dev/null || npm ci
+RUN npm ci
 
 # 复制源码并构建
 COPY . .
