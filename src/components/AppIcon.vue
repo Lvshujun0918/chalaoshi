@@ -156,6 +156,40 @@ defineProps({
     <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
   </svg>
 
+  <!-- User (single person) -->
+  <svg v-else-if="name === 'user'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+
+  <!-- Bookmark -->
+  <svg v-else-if="name === 'bookmark'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="currentColor" stroke="none" aria-hidden="true">
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+  </svg>
+
+  <!-- Graduation Cap / Course -->
+  <svg v-else-if="name === 'graduation'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+    <path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5" />
+  </svg>
+
+  <!-- Sort / Arrow Up Down -->
+  <svg v-else-if="name === 'sort'" :width="size" :height="size" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="17" y2="12" />
+    <line x1="8" y1="18" x2="13" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+
   <!-- Fallback: empty square -->
   <svg v-else :width="size" :height="size" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

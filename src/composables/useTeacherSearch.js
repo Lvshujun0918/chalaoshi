@@ -16,6 +16,8 @@ export function useTeacherSearch() {
   const totalResults = ref(0)
   const page = ref(1)
   const totalPages = ref(1)
+  const sortBy = ref('rating')
+  const sortOrder = ref('desc')
 
   // 加载统计数据
   async function loadStats() {
@@ -55,8 +57,8 @@ export function useTeacherSearch() {
       const params = new URLSearchParams({
         page: String(pageNum),
         page_size: '20',
-        sort_by: 'rating',
-        sort_order: 'desc',
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value,
       })
       const q = query.value.trim()
       if (q) params.set('q', q)
@@ -99,6 +101,16 @@ export function useTeacherSearch() {
     search(pageNum)
   }
 
+  function setSort(sort) {
+    sortBy.value = sort
+    search(1)
+  }
+
+  function setSortOrder(order) {
+    sortOrder.value = order
+    search(1)
+  }
+
   // 初始化
   loadStats()
   loadDepartments()
@@ -115,11 +127,15 @@ export function useTeacherSearch() {
     totalPages,
     departments,
     currentDepartment,
+    sortBy,
+    sortOrder,
     getCollegeName,
     clearQuery,
     search,
     filterByDepartment,
     setPage,
+    setSort,
+    setSortOrder,
   }
 }
 

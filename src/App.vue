@@ -1,30 +1,62 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useTeacherSearch } from './composables/useTeacherSearch.js'
+import { useCourseSearch } from './composables/useCourseSearch.js'
 import SearchBar from './components/SearchBar.vue'
 import TeacherCard from './components/TeacherCard.vue'
+import CourseCard from './components/CourseCard.vue'
 import CommentModal from './components/CommentModal.vue'
 import AppIcon from './components/AppIcon.vue'
 
-const {
-  query,
-  loading,
-  displayResults,
-  totalTeachers,
-  totalColleges,
-  totalResults,
-  page,
-  totalPages,
-  departments,
-  currentDepartment,
-  getCollegeName,
-  clearQuery,
-  search,
-  filterByDepartment,
-  setPage,
-} = useTeacherSearch()
+const currentMode = ref('teachers') // 'teachers' | 'courses'
+
+// ── 教师搜索 ──
+const teacherSearch = useTeacherSearch()
+
+// ── 课程搜索 ──
+const courseSearch = useCourseSearch()
+
+// 根据当前模式，动态选择用哪个 composable
+const query = computed({
+  get: () => currentMode.value === 'teachers' ? teacherSearch.query.value : courseSearch.query.value,
+  set: (val) => {
+    if (currentMode.value === 'teachers') teacherSearch.query.value = val
+    else courseSearch.query.value = val
+  },
+})
+
+const loading = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.loading.value : courseSearch.loading.value
+)
+const displayResults = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.displayResults.value : courseSearch.displayResults.value
+)
+const totalResults = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.totalResults.value : courseSearch.totalResults.value
+)
+const page = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.page.value : courseSearch.page.value
+)
+const totalPages = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.totalPages.value : courseSearch.totalPages.value
+)
+const currentSortBy = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.sortBy.value : courseSearch.sortBy.value
+)
+
+const { totalTeachers, totalColleges, departments, currentDepartment, getCollegeName } = teacherSearch
 
 const selectedTeacher = ref(null)
+
+function switchMode(mode) {
+  if (currentMode.value === mode) return
+  currentMode.value = mode
+  if (mode === 'teachers') {
+    teacherSearch.search(1)
+  } else {
+    courseSearch.search(1)
+  }
+}
 
 function openComments(teacher) {
   selectedTeacher.value = teacher
@@ -35,8 +67,13 @@ function closeComments() {
 }
 
 function handleClear() {
-  clearQuery()
-  search(1)
+  if (currentMode.value === 'teachers') {
+    teacherSearch.clearQuery()
+    teacherSearch.search(1)
+  } else {
+    courseSearch.clearQuery()
+    courseSearch.search(1)
+  }
 }
 
 // 防抖搜索：用户输入时自动触发
@@ -44,17 +81,48 @@ let debounceTimer = null
 watch(query, () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    search(1)
+    if (currentMode.value === 'teachers') {
+      teacherSearch.search(1)
+    } else {
+      courseSearch.search(1)
+    }
   }, 350)
 })
 
 function handleDeptFilter(dept) {
-  filterByDepartment(dept)
+  teacherSearch.filterByDepartment(dept)
+}
+
+// ── 排序 ──
+const teacherSortOptions = [
+  { value: 'rating', label: '评分' },
+  { value: 'hotness', label: '热度' },
+  { value: 'rating_count', label: '评论数' },
+  { value: 'name', label: '姓名' },
+]
+
+const courseSortOptions = [
+  { value: 'gpa', label: 'GPA' },
+  { value: 'count', label: '选课人数' },
+  { value: 'course_name', label: '课程名' },
+  { value: 'std_dev', label: '标准差' },
+]
+
+const currentSortOptions = computed(() =>
+  currentMode.value === 'teachers' ? teacherSortOptions : courseSortOptions
+)
+
+function handleSortChange(sortValue) {
+  if (currentMode.value === 'teachers') {
+    teacherSearch.setSort(sortValue)
+  } else {
+    courseSearch.setSort(sortValue)
+  }
 }
 
 // 初始加载热门教师
 onMounted(() => {
-  search(1)
+  teacherSearch.search(1)
 })
 </script>
 
@@ -67,7 +135,7 @@ onMounted(() => {
           <AppIcon name="book" :size="32" class="title-icon" />
           查老师
         </h1>
-        <p class="app-subtitle">教师评分查询系统</p>
+        <p class="app-subtitle">教师评分 &amp; 课程GPA查询系统</p>
         <div class="header-stats">
           <div class="stat">
             <AppIcon name="users" :size="18" class="stat-icon" />
@@ -84,14 +152,49 @@ onMounted(() => {
       </div>
     </header>
 
+    <!-- Mode Switcher -->
+    <div class="mode-switcher">
+      <button
+        :class="['mode-btn', { active: currentMode === 'teachers' }]"
+        @click="switchMode('teachers')"
+      >
+        <AppIcon name="users" :size="18" class="mode-icon" />
+        查老师
+      </button>
+      <button
+        :class="['mode-btn', { active: currentMode === 'courses' }]"
+        @click="switchMode('courses')"
+      >
+        <AppIcon name="graduation" :size="18" class="mode-icon" />
+        查课程
+      </button>
+    </div>
+
     <!-- Search -->
     <SearchBar
       v-model="query"
+      :placeholder="currentMode === 'teachers' ? '输入教师姓名、拼音或缩写…' : '输入课程名称或授课教师…'"
       @clear="handleClear()"
     />
 
-    <!-- Department Filter -->
-    <div v-if="departments.length > 0" class="dept-filter">
+    <!-- Sort Controls -->
+    <div class="sort-bar">
+      <span class="sort-label">
+        <AppIcon name="sort" :size="14" class="sort-label-icon" />
+        排序：
+      </span>
+      <div class="sort-options">
+        <button
+          v-for="opt in currentSortOptions"
+          :key="opt.value"
+          :class="['sort-chip', { active: currentSortBy === opt.value }]"
+          @click="handleSortChange(opt.value)"
+        >{{ opt.label }}</button>
+      </div>
+    </div>
+
+    <!-- Department Filter (仅教师模式) -->
+    <div v-if="currentMode === 'teachers' && departments.length > 0" class="dept-filter">
       <button
         :class="['dept-chip', { active: !currentDepartment }]"
         @click="handleDeptFilter('')"
@@ -118,7 +221,7 @@ onMounted(() => {
 
       <!-- Teacher List -->
       <TransitionGroup
-        v-if="displayResults.length > 0"
+        v-if="currentMode === 'teachers' && displayResults.length > 0"
         name="card-list"
         tag="div"
         class="teacher-list"
@@ -132,31 +235,48 @@ onMounted(() => {
         />
       </TransitionGroup>
 
-      <!-- No Results -->
+      <!-- Course List -->
+      <TransitionGroup
+        v-if="currentMode === 'courses' && displayResults.length > 0"
+        name="card-list"
+        tag="div"
+        class="teacher-list"
+      >
+        <CourseCard
+          v-for="c in displayResults"
+          :key="c.id"
+          :course="c"
+        />
+      </TransitionGroup>
+
+      <!-- No Results (initial state) -->
       <div v-else-if="!loading && !query && !currentDepartment" class="empty-state welcome">
         <AppIcon name="pointer" :size="48" class="empty-icon" />
-        <p>输入教师姓名、拼音或缩写开始查询</p>
-        <p class="empty-hint">支持教师姓名、拼音全拼和拼音首字母搜索</p>
+        <p v-if="currentMode === 'teachers'">输入教师姓名、拼音或缩写开始查询</p>
+        <p v-else>输入课程名称或授课教师开始查询</p>
+        <p class="empty-hint" v-if="currentMode === 'teachers'">支持教师姓名、拼音全拼和拼音首字母搜索</p>
+        <p class="empty-hint" v-else>支持按课程名称、授课教师搜索，可按GPA/选课人数排序</p>
       </div>
 
+      <!-- No Results (search returned empty) -->
       <div v-else-if="!loading" class="empty-state">
         <AppIcon name="search-lg" :size="48" class="empty-icon" />
-        <p>没有找到匹配的教师</p>
+        <p>没有找到匹配的结果</p>
         <p class="empty-hint">试试其他关键词吧</p>
       </div>
 
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="pagination">
-        <button :disabled="page <= 1" @click="setPage(page - 1)">‹ 上一页</button>
+        <button :disabled="page <= 1" @click="currentMode === 'teachers' ? teacherSearch.setPage(page - 1) : courseSearch.setPage(page - 1)">‹ 上一页</button>
         <template v-for="p in Math.min(totalPages, 10)" :key="p">
           <button
             v-if="p === 1 || p === totalPages || Math.abs(p - page) <= 2"
             :class="{ current: p === page }"
-            @click="setPage(p)"
+            @click="currentMode === 'teachers' ? teacherSearch.setPage(p) : courseSearch.setPage(p)"
           >{{ p }}</button>
           <span v-else-if="p === 2 || p === totalPages - 1" class="ellipsis">…</span>
         </template>
-        <button :disabled="page >= totalPages" @click="setPage(page + 1)">下一页 ›</button>
+        <button :disabled="page >= totalPages" @click="currentMode === 'teachers' ? teacherSearch.setPage(page + 1) : courseSearch.setPage(page + 1)">下一页 ›</button>
       </div>
     </main>
 
@@ -236,6 +356,107 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 16px;
+}
+
+/* ── Mode Switcher ── */
+.mode-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: -20px auto 0;
+  padding: 0 20px;
+  position: relative;
+  z-index: 10;
+  max-width: 600px;
+}
+
+.mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-border-light);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
+}
+
+.mode-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.mode-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 14px rgba(91, 94, 247, 0.35);
+}
+
+.mode-icon {
+  flex-shrink: 0;
+}
+
+/* ── Sort Bar ── */
+.sort-bar {
+  max-width: 600px;
+  margin: 12px auto 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sort-label-icon {
+  flex-shrink: 0;
+}
+
+.sort-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sort-chip {
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.sort-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sort-chip.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
 }
 
 .stat {
