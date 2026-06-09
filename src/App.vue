@@ -514,7 +514,7 @@ onMounted(() => {
   max-width: 760px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 20px 8px;
+  padding: 20px 8px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
