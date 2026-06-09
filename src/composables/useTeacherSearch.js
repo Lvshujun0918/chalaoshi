@@ -103,6 +103,7 @@ export function useTeacherSearch() {
 
   function setSort(sort) {
     sortBy.value = sort
+    sortOrder.value = 'desc'
     search(1)
   }
 

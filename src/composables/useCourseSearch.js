@@ -52,6 +52,7 @@ export function useCourseSearch() {
 
   function setSort(sort) {
     sortBy.value = sort
+    sortOrder.value = 'desc'
     search(1)
   }
 

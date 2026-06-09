@@ -46,6 +46,9 @@ const totalPages = computed(() =>
 const currentSortBy = computed(() =>
   currentMode.value === 'teachers' ? teacherSearch.sortBy.value : courseSearch.sortBy.value
 )
+const currentSortOrder = computed(() =>
+  currentMode.value === 'teachers' ? teacherSearch.sortOrder.value : courseSearch.sortOrder.value
+)
 
 const { totalTeachers, totalColleges, departments, currentDepartment, getCollegeName } = teacherSearch
 
@@ -133,10 +136,15 @@ const currentSortOptions = computed(() =>
 )
 
 function handleSortChange(sortValue) {
-  if (currentMode.value === 'teachers') {
-    teacherSearch.setSort(sortValue)
+  const isTeacher = currentMode.value === 'teachers'
+  const current = isTeacher ? teacherSearch : courseSearch
+  if (currentSortBy.value === sortValue) {
+    // 点击同一项 → 切换正序/倒序
+    const newOrder = currentSortOrder.value === 'desc' ? 'asc' : 'desc'
+    current.setSortOrder(newOrder)
   } else {
-    courseSearch.setSort(sortValue)
+    // 切换排序字段 → 默认倒序
+    current.setSort(sortValue)
   }
 }
 
@@ -209,7 +217,12 @@ onMounted(() => {
           :key="opt.value"
           :class="['sort-chip', { active: currentSortBy === opt.value }]"
           @click="handleSortChange(opt.value)"
-        >{{ opt.label }}</button>
+        >
+          {{ opt.label }}
+          <span v-if="currentSortBy === opt.value" class="sort-arrow">
+            {{ currentSortOrder === 'asc' ? '↑' : '↓' }}
+          </span>
+        </button>
       </div>
     </div>
 
@@ -481,6 +494,12 @@ onMounted(() => {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
+}
+
+.sort-arrow {
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .stat {
