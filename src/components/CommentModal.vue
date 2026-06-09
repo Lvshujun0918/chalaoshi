@@ -73,6 +73,15 @@ function goPage(p) {
   loadComments(p)
 }
 
+// 跳转指定页
+const jumpPageInput = ref('')
+function goToPage() {
+  const p = parseInt(jumpPageInput.value, 10)
+  if (isNaN(p) || p < 1 || p > totalPages.value) return
+  jumpPageInput.value = ''
+  goPage(p)
+}
+
 function changeSort(s) {
   sortBy.value = s
   loadComments(1)
@@ -111,13 +120,20 @@ const pageNumbers = computed(() => {
   const pages = []
   const total = totalPages.value
   const current = page.value
-  let start = Math.max(1, current - 2)
-  let end = Math.min(total, current + 2)
-  if (end - start < 4) {
-    if (start === 1) end = Math.min(total, start + 4)
-    else start = Math.max(1, end - 4)
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+    return pages
   }
+  // 首页
+  pages.push(1)
+  if (current > 3) pages.push('...')
+  // 当前页附近
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
   for (let i = start; i <= end; i++) pages.push(i)
+  if (current < total - 2) pages.push('...')
+  // 末页
+  pages.push(total)
   return pages
 })
 
@@ -218,13 +234,27 @@ onUnmounted(() => {
           <!-- Pagination -->
           <div v-if="totalPages > 1" class="modal-pagination">
             <button :disabled="page <= 1" @click="goPage(page - 1)">‹ 上一页</button>
-            <button
-              v-for="p in pageNumbers"
-              :key="p"
-              :class="{ current: p === page }"
-              @click="goPage(p)"
-            >{{ p }}</button>
+            <template v-for="p in pageNumbers" :key="p">
+              <span v-if="p === '...'" class="ellipsis">…</span>
+              <button
+                v-else
+                :class="{ current: p === page }"
+                @click="goPage(p)"
+              >{{ p }}</button>
+            </template>
             <button :disabled="page >= totalPages" @click="goPage(page + 1)">下一页 ›</button>
+            <span class="jump-box">
+              跳至<input
+                v-model="jumpPageInput"
+                type="number"
+                :min="1"
+                :max="totalPages"
+                placeholder="页"
+                class="jump-input"
+                @keyup.enter="goToPage"
+              />页
+              <button class="jump-btn" @click="goToPage">GO</button>
+            </span>
           </div>
         </div>
 
@@ -498,6 +528,56 @@ onUnmounted(() => {
 .modal-pagination button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.modal-pagination .ellipsis {
+  padding: 0 2px;
+  color: var(--color-text-muted);
+}
+
+.modal-pagination .jump-box {
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.modal-pagination .jump-input {
+  width: 44px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  font-size: 13px;
+  text-align: center;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.modal-pagination .jump-input::-webkit-outer-spin-button,
+.modal-pagination .jump-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.modal-pagination .jump-input:focus {
+  border-color: var(--color-primary);
+}
+
+.modal-pagination .jump-btn {
+  min-width: unset;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
 }
 
 /* Course List */

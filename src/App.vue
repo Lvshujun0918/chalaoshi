@@ -43,6 +43,39 @@ const page = computed(() =>
 const totalPages = computed(() =>
   currentMode.value === 'teachers' ? teacherSearch.totalPages.value : courseSearch.totalPages.value
 )
+
+// ── 分页器：生成展示页码（含省略号） ──
+const pageNumbers = computed(() => {
+  const total = totalPages.value
+  const current = page.value
+  const pages = []
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+    return pages
+  }
+  // 首页
+  pages.push(1)
+  if (current > 3) pages.push('...')
+  // 当前页附近
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (current < total - 2) pages.push('...')
+  // 末页
+  pages.push(total)
+  return pages
+})
+
+// 跳转指定页
+const jumpPageInput = ref('')
+function goToPage() {
+  const p = parseInt(jumpPageInput.value, 10)
+  if (isNaN(p) || p < 1 || p > totalPages.value) return
+  jumpPageInput.value = ''
+  if (currentMode.value === 'teachers') teacherSearch.setPage(p)
+  else courseSearch.setPage(p)
+}
+
 const currentSortBy = computed(() =>
   currentMode.value === 'teachers' ? teacherSearch.sortBy.value : courseSearch.sortBy.value
 )
@@ -305,15 +338,27 @@ onMounted(() => {
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="pagination">
         <button :disabled="page <= 1" @click="currentMode === 'teachers' ? teacherSearch.setPage(page - 1) : courseSearch.setPage(page - 1)">‹ 上一页</button>
-        <template v-for="p in Math.min(totalPages, 10)" :key="p">
+        <template v-for="p in pageNumbers" :key="p">
+          <span v-if="p === '...'" class="ellipsis">…</span>
           <button
-            v-if="p === 1 || p === totalPages || Math.abs(p - page) <= 2"
+            v-else
             :class="{ current: p === page }"
             @click="currentMode === 'teachers' ? teacherSearch.setPage(p) : courseSearch.setPage(p)"
           >{{ p }}</button>
-          <span v-else-if="p === 2 || p === totalPages - 1" class="ellipsis">…</span>
         </template>
         <button :disabled="page >= totalPages" @click="currentMode === 'teachers' ? teacherSearch.setPage(page + 1) : courseSearch.setPage(page + 1)">下一页 ›</button>
+        <span class="jump-box">
+          跳至<input
+            v-model="jumpPageInput"
+            type="number"
+            :min="1"
+            :max="totalPages"
+            placeholder="页"
+            class="jump-input"
+            @keyup.enter="goToPage"
+          />页
+          <button class="jump-btn" @click="goToPage">GO</button>
+        </span>
       </div>
     </main>
 
@@ -645,6 +690,51 @@ onMounted(() => {
 .pagination .ellipsis {
   padding: 0 2px;
   color: var(--color-text-muted);
+}
+
+.pagination .jump-box {
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.pagination .jump-input {
+  width: 44px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  font-size: 13px;
+  text-align: center;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.pagination .jump-input::-webkit-outer-spin-button,
+.pagination .jump-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pagination .jump-input:focus {
+  border-color: var(--color-primary);
+}
+
+.pagination .jump-btn {
+  min-width: unset;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
 }
 
 /* ── Teacher List ── */
