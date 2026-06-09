@@ -246,45 +246,48 @@ onMounted(() => {
       <!-- Loading -->
       <div v-if="loading" class="loading-state">搜索中...</div>
 
-      <!-- Result Summary -->
-      <div v-else-if="totalResults > 0" class="result-summary">
-        <span>找到 <strong>{{ totalResults }}</strong> 条结果</span>
-        <span v-if="page > 1">第 {{ page }}/{{ totalPages }} 页</span>
-      </div>
+      <!-- Has Results: Summary + List -->
+      <template v-else-if="displayResults.length > 0">
+        <!-- Result Summary -->
+        <div class="result-summary">
+          <span>找到 <strong>{{ totalResults }}</strong> 条结果</span>
+          <span v-if="page > 1">第 {{ page }}/{{ totalPages }} 页</span>
+        </div>
 
-      <!-- Teacher List -->
-      <TransitionGroup
-        v-if="currentMode === 'teachers' && displayResults.length > 0"
-        name="card-list"
-        tag="div"
-        class="teacher-list"
-      >
-        <TeacherCard
-          v-for="t in displayResults"
-          :key="t.id"
-          :teacher="t"
-          :college-name="getCollegeName(t.department)"
-          @click="openComments"
-        />
-      </TransitionGroup>
+        <!-- Teacher List -->
+        <TransitionGroup
+          v-if="currentMode === 'teachers'"
+          name="card-list"
+          tag="div"
+          class="teacher-list"
+        >
+          <TeacherCard
+            v-for="t in displayResults"
+            :key="t.id"
+            :teacher="t"
+            :college-name="getCollegeName(t.department)"
+            @click="openComments"
+          />
+        </TransitionGroup>
 
-      <!-- Course List -->
-      <TransitionGroup
-        v-if="currentMode === 'courses' && displayResults.length > 0"
-        name="card-list"
-        tag="div"
-        class="teacher-list"
-      >
-        <CourseCard
-          v-for="c in displayResults"
-          :key="c.id"
-          :course="c"
-          @click="handleCourseClick"
-        />
-      </TransitionGroup>
+        <!-- Course List -->
+        <TransitionGroup
+          v-if="currentMode === 'courses'"
+          name="card-list"
+          tag="div"
+          class="teacher-list"
+        >
+          <CourseCard
+            v-for="c in displayResults"
+            :key="c.id"
+            :course="c"
+            @click="handleCourseClick"
+          />
+        </TransitionGroup>
+      </template>
 
-      <!-- No Results (initial state) -->
-      <div v-else-if="!loading && !query && !currentDepartment" class="empty-state welcome">
+      <!-- No Results (initial welcome state) -->
+      <div v-else-if="!query && !currentDepartment" class="empty-state welcome">
         <AppIcon name="pointer" :size="48" class="empty-icon" />
         <p v-if="currentMode === 'teachers'">输入教师姓名、拼音或缩写开始查询</p>
         <p v-else>输入课程名称或授课教师开始查询</p>
@@ -293,7 +296,7 @@ onMounted(() => {
       </div>
 
       <!-- No Results (search returned empty) -->
-      <div v-else-if="!loading" class="empty-state">
+      <div v-else class="empty-state">
         <AppIcon name="search-lg" :size="48" class="empty-icon" />
         <p>没有找到匹配的结果</p>
         <p class="empty-hint">试试其他关键词吧</p>
