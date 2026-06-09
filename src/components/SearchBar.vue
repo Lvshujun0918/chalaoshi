@@ -64,7 +64,7 @@ function onClear() {
 <style scoped>
 .search-bar {
   max-width: 600px;
-  margin: -24px auto 0;
+  margin: 18px auto 0;
   padding: 0 20px;
   position: relative;
   z-index: 10;
