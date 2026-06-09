@@ -4,7 +4,9 @@ import vue from '@vitejs/plugin-vue'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  base: '/absproxy/5173/',
   server: {
+    allowedHosts: ['code.cszj.wang'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
