@@ -91,6 +91,15 @@ type DepartmentItem struct {
 	Count int64  `json:"count"`
 }
 
+// CourseListResponse 课程列表响应
+type CourseListResponse struct {
+	Courses    []Course `json:"courses"`
+	Total      int64    `json:"total"`
+	Page       int      `json:"page"`
+	PageSize   int      `json:"page_size"`
+	TotalPages int      `json:"total_pages"`
+}
+
 // StatsResponse 首页统计数据
 type StatsResponse struct {
 	TotalTeachers   int64 `json:"total_teachers"`

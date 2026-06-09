@@ -206,3 +206,91 @@ func SearchTeachers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, teachers)
 }
+
+// GetCourses 获取课程列表（分页+搜索+排序）
+func GetCourses(c *gin.Context) {
+	query := c.Query("q")
+	teacher := c.Query("teacher")
+	sortBy := c.DefaultQuery("sort_by", "gpa")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	if page < 1 { page = 1 }
+	if pageSize < 1 { pageSize = 1 }
+	if pageSize > 100 { pageSize = 100 }
+
+	var dbQuery *gorm.DB
+
+	if query != "" {
+		like := "%" + query + "%"
+		dbQuery = database.DB.Model(&models.Course{}).Where(
+			"course_name LIKE ? OR teacher_name LIKE ?",
+			like, like,
+		)
+	} else {
+		dbQuery = database.DB.Model(&models.Course{})
+	}
+
+	// 按教师筛选
+	if teacher != "" {
+		dbQuery = dbQuery.Where("teacher_name = ?", teacher)
+	}
+
+	// 计数
+	var total int64
+	dbQuery.Count(&total)
+
+	// 排序
+	orderCol := "gpa"
+	switch sortBy {
+	case "count":
+		orderCol = "count"
+	case "course_name":
+		orderCol = "course_name"
+	case "teacher_name":
+		orderCol = "teacher_name"
+	case "std_dev":
+		orderCol = "std_dev"
+	}
+	if sortOrder == "asc" {
+		orderCol += " ASC"
+	} else {
+		orderCol += " DESC"
+	}
+	orderCol += ", course_name ASC"
+
+	// 分页
+	offset := (page - 1) * pageSize
+	var courses []models.Course
+	dbQuery.Order(orderCol).Offset(offset).Limit(pageSize).Find(&courses)
+
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	c.JSON(http.StatusOK, models.CourseListResponse{
+		Courses:    courses,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	})
+}
+
+// SearchCourses 快捷搜索课程（用于搜索框自动补全）
+func SearchCourses(c *gin.Context) {
+	query := c.Query("q")
+	if query == "" {
+		c.JSON(http.StatusOK, []models.Course{})
+		return
+	}
+
+	like := "%" + query + "%"
+	var courses []models.Course
+	database.DB.Model(&models.Course{}).
+		Where("course_name LIKE ? OR teacher_name LIKE ?", like, like).
+		Order("gpa DESC").
+		Limit(10).
+		Find(&courses)
+
+	c.JSON(http.StatusOK, courses)
+}

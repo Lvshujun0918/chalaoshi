@@ -74,6 +74,10 @@ func main() {
 		// 搜索（简化版，用于输入提示）
 		api.GET("/search", handlers.SearchTeachers)
 
+		// 课程相关
+		api.GET("/courses", handlers.GetCourses)                  // 列表+搜索+排序
+		api.GET("/courses/search", handlers.SearchCourses)        // 快捷搜索
+
 		// 院系列表
 		api.GET("/departments", handlers.GetDepartments)
 
