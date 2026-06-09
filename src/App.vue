@@ -8,6 +8,9 @@ import CourseCard from './components/CourseCard.vue'
 import CommentModal from './components/CommentModal.vue'
 import AppIcon from './components/AppIcon.vue'
 
+// 构建时由 vite define 注入的 git commit 短哈希
+const gitHash = __GIT_HASH__
+
 const currentMode = ref('teachers') // 'teachers' | 'courses'
 
 // ── 教师搜索 ──
@@ -286,6 +289,9 @@ onMounted(() => {
         Made by lsj with
         <AppIcon name="heart" :size="12" class="footer-heart" />
         · 数据来自査老师离线版，仅供参考
+      </p>
+      <p class="footer-version">
+        当前构建版本<code>{{ gitHash }}</code>
       </p>
     </footer>
 
@@ -659,6 +665,20 @@ onMounted(() => {
   color: #ef4444;
   vertical-align: -2px;
   display: inline;
+}
+
+.footer-version {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+.footer-version code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  background: var(--color-border-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
 }
 
 /* ── Responsive ── */
