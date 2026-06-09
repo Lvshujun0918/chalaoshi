@@ -23,6 +23,33 @@ jobs:
       - name: Checkout 代码
         uses: actions/checkout@v4
 
+      # ── 官方 Node.js 环境（缓存 npm，验证依赖） ──
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: 验证前端依赖
+        run: npm ci --dry-run
+
+      # ── 官方 Go 环境（缓存模块，验证依赖） ──
+      - name: 设置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'backend/go.mod'
+          cache: true
+
+      - name: 验证后端依赖
+        working-directory: backend
+        run: go mod verify
+
+      # ── 计算短 commit hash 作为版本号 ──
+      - name: 生成版本号
+        id: version
+        run: echo "hash=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      # ── 多平台 Docker 构建 ──
       - name: 设置 QEMU (多平台支持)
         uses: docker/setup-qemu-action@v3
 
@@ -49,7 +76,7 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: 构建并推送
+      - name: 构建并推送 Docker 镜像
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -57,5 +84,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            GIT_HASH=${{ steps.version.outputs.hash }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

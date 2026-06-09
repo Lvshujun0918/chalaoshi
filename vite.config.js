@@ -3,11 +3,15 @@ import vue from '@vitejs/plugin-vue'
 import { execSync } from 'child_process'
 
 // 获取当前 git commit 短哈希
-let gitHash = 'unknown'
-try {
-  gitHash = execSync('git rev-parse --short HEAD').toString().trim()
-} catch (e) {
-  console.warn('无法获取 git commit hash:', e.message)
+// CI/Docker 构建时通过 GIT_HASH 环境变量传入，本地开发时自动获取
+let gitHash = process.env.GIT_HASH
+if (!gitHash) {
+  try {
+    gitHash = execSync('git rev-parse --short HEAD').toString().trim()
+  } catch (e) {
+    console.warn('无法获取 git commit hash:', e.message)
+    gitHash = 'unknown'
+  }
 }
 
 // https://vite.dev/config/
