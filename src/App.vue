@@ -96,6 +96,23 @@ function handleDeptFilter(dept) {
   teacherSearch.filterByDepartment(dept)
 }
 
+// ── 课程点击 → 查找对应教师并打开评分详情 ──
+async function handleCourseClick(course) {
+  const teacherName = course.teacher_name
+  if (!teacherName) return
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(teacherName)}`)
+    const teachers = await res.json()
+    if (teachers && teachers.length > 0) {
+      // 精确匹配教师姓名
+      const match = teachers.find(t => t.name === teacherName) || teachers[0]
+      selectedTeacher.value = match
+    }
+  } catch (e) {
+    console.error('查找教师失败:', e)
+  }
+}
+
 // ── 排序 ──
 const teacherSortOptions = [
   { value: 'rating', label: '评分' },
@@ -249,6 +266,7 @@ onMounted(() => {
           v-for="c in displayResults"
           :key="c.id"
           :course="c"
+          @click="handleCourseClick"
         />
       </TransitionGroup>
 
