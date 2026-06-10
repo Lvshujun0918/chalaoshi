@@ -83,6 +83,9 @@ func main() {
 
 		// 统计
 		api.GET("/stats", handlers.GetStats)
+
+		// 数据版本
+		api.GET("/version", handlers.GetVersion)
 	}
 
 	// 静态文件服务（生产环境下前端打包文件）

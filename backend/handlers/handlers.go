@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 
 	"chalaoshi-backend/database"
@@ -293,4 +295,42 @@ func SearchCourses(c *gin.Context) {
 		Find(&courses)
 
 	c.JSON(http.StatusOK, courses)
+}
+
+// VersionInfo 版本信息结构
+type VersionInfo struct {
+	Version     string `json:"version"`
+	ReleaseDate string `json:"release_date"`
+}
+
+// GetVersion 读取 data/ver.json 并返回数据版本
+func GetVersion(c *gin.Context) {
+	// 尝试多个路径：Docker 容器内、本地开发
+	paths := []string{"data/ver.json", "../data/ver.json", "../../data/ver.json"}
+	var data []byte
+	var err error
+	for _, p := range paths {
+		data, err = os.ReadFile(p)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		c.JSON(http.StatusOK, VersionInfo{
+			Version:     "unknown",
+			ReleaseDate: "unknown",
+		})
+		return
+	}
+
+	var vi VersionInfo
+	if err := json.Unmarshal(data, &vi); err != nil {
+		c.JSON(http.StatusOK, VersionInfo{
+			Version:     "unknown",
+			ReleaseDate: "unknown",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, vi)
 }
