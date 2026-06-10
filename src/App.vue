@@ -11,6 +11,9 @@ import AppIcon from './components/AppIcon.vue'
 // 构建时由 vite define 注入的 git commit 短哈希
 const gitHash = __GIT_HASH__
 
+// 数据版本（从 ver.json 读取）
+const dataVersion = ref('加载中...')
+
 const currentMode = ref('teachers') // 'teachers' | 'courses'
 
 // ── 教师搜索 ──
@@ -181,9 +184,16 @@ function handleSortChange(sortValue) {
   }
 }
 
-// 初始加载热门教师
-onMounted(() => {
+// 初始加载热门教师 + 数据版本
+onMounted(async () => {
   teacherSearch.search(1)
+  try {
+    const res = await fetch('/api/version')
+    const v = await res.json()
+    dataVersion.value = v.release_date || v.version || '未知'
+  } catch {
+    dataVersion.value = '未知'
+  }
 })
 </script>
 
@@ -370,7 +380,7 @@ onMounted(() => {
         · 数据来自査老师离线版，仅供参考
       </p>
       <p class="footer-version">
-        当前构建版本<code>{{ gitHash }}</code>
+        数据版本 {{ dataVersion }} · 构建版本 {{ gitHash }}
       </p>
     </footer>
 

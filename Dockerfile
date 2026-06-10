@@ -65,8 +65,11 @@ WORKDIR /app
 COPY --from=builder-go /app/chalaoshi-server .
 COPY --from=builder-go /app/dist ./dist
 
-RUN mkdir -p /app/db
+RUN mkdir -p /app/db /app/data
 COPY backend/data/chalaoshi.db /app/db/chalaoshi.db
+
+# 复制数据版本文件（供 /api/version 读取）
+COPY data/ver.json /app/data/ver.json
 
 EXPOSE 8080
 CMD ["./chalaoshi-server", "-db", "/app/db/chalaoshi.db", "-static", "./dist", "-port", "8080"]

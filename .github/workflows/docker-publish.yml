@@ -49,6 +49,14 @@ jobs:
         id: version
         run: echo "hash=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
+      # ── 读取数据版本（data/ver.json 中的 release_date）──
+      - name: 读取数据版本
+        id: dataver
+        run: |
+          VER=$(jq -r '.release_date' data/ver.json)
+          echo "date=${VER}" >> $GITHUB_OUTPUT
+          echo "数据版本: ${VER}"
+
       # ── 多平台 Docker 构建 ──
       - name: 设置 QEMU (多平台支持)
         uses: docker/setup-qemu-action@v3
@@ -75,6 +83,10 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=chalaoshi
+            org.opencontainers.image.description=查老师 - 教师评分查询系统
+            chalaoshi.data-version=${{ steps.dataver.outputs.date }}
 
       - name: 构建并推送 Docker 镜像
         uses: docker/build-push-action@v6

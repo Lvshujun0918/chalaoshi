@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "release_date": "2026-01-11",
+  "update_package_url": "https://chalaoshi.de/static/download/chalaoshi_csv20260111_5399305_3926_CA63EE_sha256.zip",
+  "check": {
+    "type": "sha256",
+    "value": "46dfe0245038fc12389c08185674087daa62a5f02b6127edb0cbfa7651289792"
+  },
+  "password": {
+    "type": "sha256",
+    "topic_id": "5399305",
+    "floor_id": "3926",
+    "hint":"0c4a1...c0d7fb"
+  }
+}
