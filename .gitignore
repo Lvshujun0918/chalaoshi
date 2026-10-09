@@ -27,3 +27,7 @@ dist-ssr
 *.csv
 gpa.json
 !backend/data/chalaoshi.db
+
+# SQLite WAL 运行时临时文件（自动生成，无需提交）
+backend/data/*.db-shm
+backend/data/*.db-wal
